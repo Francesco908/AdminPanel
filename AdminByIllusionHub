@@ -1,0 +1,896 @@
+-- ULTIMATE Admin Panel - Client Side Only
+-- Insert in StarterGui as LocalScript
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+
+-- Cooldown System
+local cooldowns = {}
+local COOLDOWN_TIME = 15
+
+-- ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "UltimateAdminPanel"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- Toggle Button (Top Right - Next to Roblox UI)
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Name = "ToggleButton"
+ToggleButton.Size = UDim2.new(0, 45, 0, 45)
+ToggleButton.Position = UDim2.new(1, -55, 0, 5)
+ToggleButton.AnchorPoint = Vector2.new(0, 0)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.BackgroundTransparency = 0.2
+ToggleButton.BorderSizePixel = 0
+ToggleButton.Text = "💲"
+ToggleButton.TextSize = 22
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.TextColor3 = Color3.fromRGB(0, 200, 0)
+ToggleButton.ZIndex = 10
+ToggleButton.Parent = ScreenGui
+
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(0, 10)
+ToggleCorner.Parent = ToggleButton
+
+local ToggleStroke = Instance.new("UIStroke")
+ToggleStroke.Color = Color3.fromRGB(0, 255, 100)
+ToggleStroke.Thickness = 2
+ToggleStroke.Transparency = 0.3
+ToggleStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+ToggleStroke.Parent = ToggleButton
+
+-- Glow Effect
+local ToggleGlow = Instance.new("ImageLabel")
+ToggleGlow.Size = UDim2.new(1, 20, 1, 20)
+ToggleGlow.Position = UDim2.new(0.5, 0, 0.5, 0)
+ToggleGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+ToggleGlow.BackgroundTransparency = 1
+ToggleGlow.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
+ToggleGlow.ImageColor3 = Color3.fromRGB(0, 255, 100)
+ToggleGlow.ImageTransparency = 0.7
+ToggleGlow.ZIndex = 9
+ToggleGlow.Parent = ToggleButton
+
+-- Pulse Animation
+spawn(function()
+    while true do
+        TweenService:Create(ToggleGlow, TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+            ImageTransparency = 0.9,
+            Size = UDim2.new(1, 30, 1, 30)
+        }):Play()
+        wait(1)
+    end
+end)
+
+-- Main Frame (Compact & Optimized)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 400, 0, 340)
+MainFrame.Position = UDim2.new(1, -410, 0, 55)
+MainFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+MainFrame.BackgroundTransparency = 0.88
+MainFrame.BorderSizePixel = 0
+MainFrame.Visible = false
+MainFrame.ClipsDescendants = true
+MainFrame.ZIndex = 5
+MainFrame.Parent = ScreenGui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 12)
+MainCorner.Parent = MainFrame
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(255, 255, 255)
+MainStroke.Thickness = 2.5
+MainStroke.Transparency = 0.5
+MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+MainStroke.Parent = MainFrame
+
+-- Backdrop Blur
+local Blur = Instance.new("Frame")
+Blur.Size = UDim2.new(1, 0, 1, 0)
+Blur.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Blur.BackgroundTransparency = 0.95
+Blur.BorderSizePixel = 0
+Blur.ZIndex = 4
+Blur.Parent = MainFrame
+
+-- Header
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 38)
+Header.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Header.BackgroundTransparency = 0.75
+Header.BorderSizePixel = 0
+Header.ZIndex = 6
+Header.Parent = MainFrame
+
+local HeaderCorner = Instance.new("UICorner")
+HeaderCorner.CornerRadius = UDim.new(0, 12)
+HeaderCorner.Parent = Header
+
+local HeaderBottom = Instance.new("Frame")
+HeaderBottom.Size = UDim2.new(1, 0, 0, 12)
+HeaderBottom.Position = UDim2.new(0, 0, 1, -12)
+HeaderBottom.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+HeaderBottom.BackgroundTransparency = 0.75
+HeaderBottom.BorderSizePixel = 0
+HeaderBottom.ZIndex = 6
+HeaderBottom.Parent = Header
+
+-- Title
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 1, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "💲 ADMIN PANEL"
+Title.TextColor3 = Color3.fromRGB(30, 30, 30)
+Title.TextSize = 16
+Title.Font = Enum.Font.GothamBold
+Title.ZIndex = 7
+Title.Parent = Header
+
+-- Left Panel (Commands)
+local LeftPanel = Instance.new("ScrollingFrame")
+LeftPanel.Name = "Commands"
+LeftPanel.Size = UDim2.new(0.48, -5, 1, -45)
+LeftPanel.Position = UDim2.new(0, 5, 0, 40)
+LeftPanel.BackgroundTransparency = 1
+LeftPanel.BorderSizePixel = 0
+LeftPanel.ScrollBarThickness = 5
+LeftPanel.ScrollBarImageColor3 = Color3.fromRGB(200, 200, 200)
+LeftPanel.ScrollBarImageTransparency = 0.5
+LeftPanel.CanvasSize = UDim2.new(0, 0, 0, 0)
+LeftPanel.ZIndex = 6
+LeftPanel.Parent = MainFrame
+
+local LeftList = Instance.new("UIListLayout")
+LeftList.Padding = UDim.new(0, 6)
+LeftList.SortOrder = Enum.SortOrder.LayoutOrder
+LeftList.Parent = LeftPanel
+
+-- Right Panel (Players)
+local RightPanel = Instance.new("ScrollingFrame")
+RightPanel.Name = "Players"
+RightPanel.Size = UDim2.new(0.48, -5, 1, -45)
+RightPanel.Position = UDim2.new(0.52, 0, 0, 40)
+RightPanel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+RightPanel.BackgroundTransparency = 0.82
+RightPanel.BorderSizePixel = 0
+RightPanel.ScrollBarThickness = 5
+RightPanel.ScrollBarImageColor3 = Color3.fromRGB(200, 200, 200)
+RightPanel.ScrollBarImageTransparency = 0.5
+RightPanel.CanvasSize = UDim2.new(0, 0, 0, 0)
+RightPanel.ZIndex = 6
+RightPanel.Parent = MainFrame
+
+local RightCorner = Instance.new("UICorner")
+RightCorner.CornerRadius = UDim.new(0, 10)
+RightCorner.Parent = RightPanel
+
+local RightList = Instance.new("UIListLayout")
+RightList.Padding = UDim.new(0, 4)
+RightList.SortOrder = Enum.SortOrder.Name
+RightList.Parent = RightPanel
+
+-- Selected Player
+local selectedPlayer = nil
+
+-- Cooldown Check Function
+local function checkCooldown(commandName)
+    if cooldowns[commandName] then
+        local timeLeft = cooldowns[commandName] - tick()
+        if timeLeft > 0 then
+            return false, math.ceil(timeLeft)
+        else
+            cooldowns[commandName] = nil
+        end
+    end
+    return true, 0
+end
+
+-- Start Cooldown Function
+local function startCooldown(commandName, button)
+    cooldowns[commandName] = tick() + COOLDOWN_TIME
+    
+    local originalText = button.Text
+    button.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+    
+    spawn(function()
+        for i = COOLDOWN_TIME, 0, -1 do
+            if cooldowns[commandName] then
+                button.Text = originalText .. " (" .. i .. "s)"
+                wait(1)
+            else
+                break
+            end
+        end
+        button.Text = originalText
+        button.BackgroundColor3 = button:GetAttribute("OriginalColor") and 
+            Color3.fromHSV(button:GetAttribute("OriginalColor"), 0.8, 1) or 
+            Color3.fromRGB(100, 150, 255)
+        cooldowns[commandName] = nil
+    end)
+end
+
+-- Create Command Button
+local function createCommandButton(name, icon, color, callback)
+    local btn = Instance.new("TextButton")
+    btn.Name = name
+    btn.Size = UDim2.new(1, 0, 0, 35)
+    btn.BackgroundColor3 = color
+    btn.BackgroundTransparency = 0.35
+    btn.BorderSizePixel = 0
+    btn.Text = icon .. " " .. name
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 13
+    btn.Font = Enum.Font.GothamBold
+    btn.AutoButtonColor = false
+    btn.ZIndex = 7
+    btn.Parent = LeftPanel
+    
+    -- Store original color
+    local h, s, v = Color3.toHSV(color)
+    btn:SetAttribute("OriginalColor", h)
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = btn
+    
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(255, 255, 255)
+    stroke.Thickness = 1.5
+    stroke.Transparency = 0.6
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Parent = btn
+    
+    -- Hover Effects
+    btn.MouseEnter:Connect(function()
+        if not cooldowns[name] then
+            TweenService:Create(btn, TweenInfo.new(0.15), {
+                BackgroundTransparency = 0.15,
+                TextSize = 14
+            }):Play()
+            TweenService:Create(stroke, TweenInfo.new(0.15), {Transparency = 0.3}):Play()
+        end
+    end)
+    
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.15), {
+            BackgroundTransparency = 0.35,
+            TextSize = 13
+        }):Play()
+        TweenService:Create(stroke, TweenInfo.new(0.15), {Transparency = 0.6}):Play()
+    end)
+    
+    -- Click Handler
+    btn.MouseButton1Click:Connect(function()
+        local canUse, timeLeft = checkCooldown(name)
+        
+        if not canUse then
+            -- Show cooldown warning
+            btn.Text = "Wait " .. timeLeft .. "s!"
+            TweenService:Create(btn, TweenInfo.new(0.1, Enum.EasingStyle.Elastic), {
+                TextSize = 15
+            }):Play()
+            wait(0.1)
+            TweenService:Create(btn, TweenInfo.new(0.1), {TextSize = 13}):Play()
+            wait(0.5)
+            btn.Text = icon .. " " .. name
+            return
+        end
+        
+        if not selectedPlayer then
+            btn.Text = "Select Player!"
+            wait(1)
+            btn.Text = icon .. " " .. name
+            return
+        end
+        
+        -- Execute command
+        callback()
+        startCooldown(name, btn)
+        
+        -- Visual feedback
+        TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundTransparency = 0}):Play()
+        wait(0.1)
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.35}):Play()
+    end)
+    
+    return btn
+end
+
+-- Create Player Button
+local function createPlayerButton(plr)
+    local btn = Instance.new("TextButton")
+    btn.Name = plr.Name
+    btn.Size = UDim2.new(1, -8, 0, 30)
+    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    btn.BackgroundTransparency = 0.65
+    btn.BorderSizePixel = 0
+    btn.Text = "👤 " .. plr.Name
+    btn.TextColor3 = Color3.fromRGB(40, 40, 40)
+    btn.TextSize = 12
+    btn.Font = Enum.Font.GothamBold
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    btn.AutoButtonColor = false
+    btn.ZIndex = 7
+    btn.Parent = RightPanel
+    
+    local padding = Instance.new("UIPadding")
+    padding.PaddingLeft = UDim.new(0, 10)
+    padding.Parent = btn
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 7)
+    corner.Parent = btn
+    
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(200, 200, 200)
+    stroke.Thickness = 1
+    stroke.Transparency = 0.7
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Parent = btn
+    
+    -- Selection
+    btn.MouseButton1Click:Connect(function()
+        selectedPlayer = plr
+        
+        for _, child in pairs(RightPanel:GetChildren()) do
+            if child:IsA("TextButton") then
+                TweenService:Create(child, TweenInfo.new(0.2), {
+                    BackgroundTransparency = 0.65,
+                    TextColor3 = Color3.fromRGB(40, 40, 40)
+                }):Play()
+                local s = child:FindFirstChild("UIStroke")
+                if s then
+                    TweenService:Create(s, TweenInfo.new(0.2), {
+                        Color = Color3.fromRGB(200, 200, 200),
+                        Transparency = 0.7
+                    }):Play()
+                end
+            end
+        end
+        
+        TweenService:Create(btn, TweenInfo.new(0.2), {
+            BackgroundTransparency = 0.25,
+            TextColor3 = Color3.fromRGB(0, 0, 0)
+        }):Play()
+        TweenService:Create(stroke, TweenInfo.new(0.2), {
+            Color = Color3.fromRGB(0, 255, 100),
+            Transparency = 0.3
+        }):Play()
+    end)
+    
+    -- Hover
+    btn.MouseEnter:Connect(function()
+        if selectedPlayer ~= plr then
+            TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundTransparency = 0.45}):Play()
+        end
+    end)
+    
+    btn.MouseLeave:Connect(function()
+        if selectedPlayer ~= plr then
+            TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundTransparency = 0.65}):Play()
+        end
+    end)
+    
+    return btn
+end
+
+-- Update Player List
+local function updatePlayerList()
+    for _, child in pairs(RightPanel:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+    
+    for _, plr in pairs(Players:GetPlayers()) do
+        createPlayerButton(plr)
+    end
+    
+    RightPanel.CanvasSize = UDim2.new(0, 0, 0, RightList.AbsoluteContentSize.Y + 8)
+end
+
+-- ═══════════════════════════════════════════════════════════
+--                    ADMIN COMMANDS
+-- ═══════════════════════════════════════════════════════════
+
+-- RADGOOL - Inverted Controls & Camera
+createCommandButton("Radgool", "🔄", Color3.fromRGB(100, 150, 255), function()
+    if not selectedPlayer or not selectedPlayer.Character then return end
+    
+    local char = selectedPlayer.Character
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    local head = char:FindFirstChild("Head")
+    
+    if humanoid and head then
+        -- Timer Billboard
+        local billboardGui = Instance.new("BillboardGui")
+        billboardGui.Size = UDim2.new(0, 100, 0, 50)
+        billboardGui.StudsOffset = Vector3.new(0, 3, 0)
+        billboardGui.AlwaysOnTop = true
+        billboardGui.Parent = head
+        
+        local timerBg = Instance.new("Frame")
+        timerBg.Size = UDim2.new(1, 0, 1, 0)
+        timerBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        timerBg.BackgroundTransparency = 0.5
+        timerBg.BorderSizePixel = 0
+        timerBg.Parent = billboardGui
+        
+        local bgCorner = Instance.new("UICorner")
+        bgCorner.CornerRadius = UDim.new(0, 8)
+        bgCorner.Parent = timerBg
+        
+        local timerLabel = Instance.new("TextLabel")
+        timerLabel.Size = UDim2.new(1, 0, 1, 0)
+        timerLabel.BackgroundTransparency = 1
+        timerLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
+        timerLabel.TextSize = 32
+        timerLabel.Font = Enum.Font.GothamBold
+        timerLabel.TextStrokeTransparency = 0.5
+        timerLabel.Parent = timerBg
+        
+        -- Invert Movement
+        local moveConnection
+        moveConnection = RunService.Heartbeat:Connect(function()
+            if humanoid and humanoid.MoveDirection.Magnitude > 0 then
+                local moveDir = humanoid.MoveDirection
+                humanoid:Move(-moveDir * 2.5)
+            end
+        end)
+        
+        -- Invert Camera (for local player only)
+        local camConnection
+        if selectedPlayer == player then
+            local camera = workspace.CurrentCamera
+            local originalCFrame = camera.CFrame
+            
+            camConnection = RunService.RenderStepped:Connect(function()
+                if UserInputService:GetMouseDelta().Magnitude > 0 then
+                    local delta = UserInputService:GetMouseDelta()
+                    camera.CFrame = camera.CFrame * CFrame.Angles(
+                        math.rad(delta.Y * 0.4),
+                        math.rad(delta.X * 0.4),
+                        0
+                    )
+                end
+            end)
+        end
+        
+        -- Countdown
+        spawn(function()
+            for i = 10, 0, -1 do
+                if billboardGui.Parent then
+                    timerLabel.Text = "⏰ " .. tostring(i)
+                    
+                    -- Pulse animation
+                    TweenService:Create(timerLabel, TweenInfo.new(0.3, Enum.EasingStyle.Elastic), {
+                        TextSize = 38
+                    }):Play()
+                    wait(0.3)
+                    TweenService:Create(timerLabel, TweenInfo.new(0.2), {
+                        TextSize = 32
+                    }):Play()
+                    wait(0.7)
+                else
+                    break
+                end
+            end
+            
+            billboardGui:Destroy()
+            moveConnection:Disconnect()
+            if camConnection then
+                camConnection:Disconnect()
+            end
+        end)
+    end
+end)
+
+-- JAIL - Prison Cell
+createCommandButton("Jail", "🔒", Color3.fromRGB(150, 100, 255), function()
+    if not selectedPlayer or not selectedPlayer.Character then return end
+    
+    local char = selectedPlayer.Character
+    local rootPart = char:FindFirstChild("HumanoidRootPart")
+    
+    if rootPart then
+        local jail = Instance.new("Model")
+        jail.Name = "PrisonCell"
+        jail.Parent = workspace
+        
+        local function createPart(size, pos, transparency)
+            local part = Instance.new("Part")
+            part.Size = size
+            part.Position = rootPart.Position + pos
+            part.Anchored = true
+            part.BrickColor = BrickColor.new("Dark stone grey")
+            part.Material = Enum.Material.Metal
+            part.Transparency = transparency or 0
+            part.Parent = jail
+            return part
+        end
+        
+        -- Floor & Ceiling
+        createPart(Vector3.new(9, 0.5, 9), Vector3.new(0, -3.5, 0))
+        createPart(Vector3.new(9, 0.5, 9), Vector3.new(0, 7, 0))
+        
+        -- Bars (all 4 sides)
+        for x = -4, 4, 1 do
+            createPart(Vector3.new(0.3, 10, 0.3), Vector3.new(x, 1.75, -4.5), 0)
+            createPart(Vector3.new(0.3, 10, 0.3), Vector3.new(x, 1.75, 4.5), 0)
+        end
+        
+        for z = -4, 4, 1 do
+            createPart(Vector3.new(0.3, 10, 0.3), Vector3.new(-4.5, 1.75, z), 0)
+            createPart(Vector3.new(0.3, 10, 0.3), Vector3.new(4.5, 1.75, z), 0)
+        end
+        
+        -- Sound effect
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://5043010218"
+        sound.Volume = 0.5
+        sound.Parent = rootPart
+        sound:Play()
+        
+        game:GetService("Debris"):AddItem(jail, 10)
+        game:GetService("Debris"):AddItem(sound, 2)
+    end
+end)
+
+-- ROCKET - Launch & Explode
+createCommandButton("Rocket", "🚀", Color3.fromRGB(255, 100, 100), function()
+    if not selectedPlayer or not selectedPlayer.Character then return end
+    
+    local char = selectedPlayer.Character
+    local rootPart = char:FindFirstChild("HumanoidRootPart")
+    
+    if rootPart then
+        local rocket = Instance.new("Part")
+        rocket.Size = Vector3.new(1.5, 5, 1.5)
+        rocket.Position = rootPart.Position - Vector3.new(0, 2, 0)
+        rocket.BrickColor = BrickColor.new("Bright red")
+        rocket.Material = Enum.Material.Neon
+        rocket.CanCollide = false
+        rocket.Parent = workspace
+        
+        local mesh = Instance.new("SpecialMesh")
+        mesh.MeshType = Enum.MeshType.FileMesh
+        mesh.MeshId = "rbxassetid://2520762076"
+        mesh.Scale = Vector3.new(0.6, 0.6, 0.6)
+        mesh.Parent = rocket
+        
+        local weld = Instance.new("WeldConstraint")
+        weld.Part0 = rootPart
+        weld.Part1 = rocket
+        weld.Parent = rocket
+        
+        local bv = Instance.new("BodyVelocity")
+        bv.Velocity = Vector3.new(0, 150, 0)
+        bv.MaxForce = Vector3.new(0, math.huge, 0)
+        bv.Parent = rootPart
+        
+        -- Fire & Smoke
+        local fire = Instance.new("Fire")
+        fire.Size = 12
+        fire.Heat = 15
+        fire.Parent = rocket
+        
+        local smoke = Instance.new("Smoke")
+        smoke.Size = 8
+        smoke.RiseVelocity = -5
+        smoke.Parent = rocket
+        
+        -- Launch sound
+        local launchSound = Instance.new("Sound")
+        launchSound.SoundId = "rbxassetid://5843821384"
+        launchSound.Volume = 0.7
+        launchSound.Parent = rocket
+        launchSound:Play()
+        
+        delay(2.5, function()
+            local explosion = Instance.new("Explosion")
+            explosion.Position = rootPart.Position
+            explosion.BlastRadius = 18
+            explosion.BlastPressure = 600000
+            explosion.Parent = workspace
+            
+            rocket:Destroy()
+            bv:Destroy()
+        end)
+    end
+end)
+
+-- BALLOON - Float Away
+createCommandButton("Balloon", "🎈", Color3.fromRGB(255, 200, 100), function()
+    if not selectedPlayer or not selectedPlayer.Character then return end
+    
+    local char = selectedPlayer.Character
+    local rootPart = char:FindFirstChild("HumanoidRootPart")
+    
+    if rootPart then
+        local colors = {
+            Color3.fromRGB(255, 100, 100),
+            Color3.fromRGB(100, 255, 100),
+            Color3.fromRGB(100, 100, 255),
+            Color3.fromRGB(255, 255, 100),
+            Color3.fromRGB(255, 100, 255),
+            Color3.fromRGB(100, 255, 255)
+        }
+        
+        for i = 1, 8 do
+            local balloon = Instance.new("Part")
+            balloon.Shape = Enum.PartType.Ball
+            balloon.Size = Vector3.new(2.5, 2.5, 2.5)
+            balloon.Position = rootPart.Position + Vector3.new(
+                math.random(-3, 3),
+                5,
+                math.random(-3, 3)
+            )
+            balloon.Color = colors[math.random(1, #colors)]
+            balloon.Material = Enum.Material.Neon
+            balloon.CanCollide = false
+            balloon.Parent = workspace
+            
+            -- Rope
+            local att0 = Instance.new("Attachment", balloon)
+            local att1 = Instance.new("Attachment", rootPart)
+            
+            local rope = Instance.new("RopeConstraint")
+            rope.Attachment0 = att0
+            rope.Attachment1 = att1
+            rope.Length = 6
+            rope.Visible = true
+            rope.Thickness = 0.15
+            rope.Color = BrickColor.new("White")
+            rope.Parent = balloon
+            
+            -- Float force
+            local bv = Instance.new("BodyVelocity")
+            bv.Velocity = Vector3.new(0, 30, 0)
+            bv.MaxForce = Vector3.new(0, 5000, 0)
+            bv.Parent = balloon
+            
+            game:GetService("Debris"):AddItem(balloon, 20)
+        end
+        
+        -- Pop sound
+        local popSound = Instance.new("Sound")
+        popSound.SoundId = "rbxassetid://6647634222"
+        popSound.Volume = 0.4
+        popSound.Parent = rootPart
+        popSound:Play()
+        game:GetService("Debris"):AddItem(popSound, 2)
+    end
+end)
+
+-- EXPLODE - Continuous Explosions
+createCommandButton("Explode", "💥", Color3.fromRGB(255, 80, 80), function()
+    if not selectedPlayer or not selectedPlayer.Character then return end
+    
+    local char = selectedPlayer.Character
+    
+    spawn(function()
+        for i = 1, 10 do
+            local rootPart = char:FindFirstChild("HumanoidRootPart")
+            if rootPart then
+                local explosion = Instance.new("Explosion")
+                explosion.Position = rootPart.Position
+                explosion.BlastRadius = 10
+                explosion.BlastPressure = 250000
+                explosion.ExplosionType = Enum.ExplosionType.NoCraters
+                explosion.Parent = workspace
+                
+                -- Visual effect
+                local effect = Instance.new("Part")
+                effect.Size = Vector3.new(1, 1, 1)
+                effect.Position = rootPart.Position
+                effect.Anchored = true
+                effect.CanCollide = false
+                effect.Material = Enum.Material.Neon
+                effect.BrickColor = BrickColor.new("Really red")
+                effect.Transparency = 0.3
+                effect.Shape = Enum.PartType.Ball
+                effect.Parent = workspace
+                
+                TweenService:Create(effect, TweenInfo.new(0.8), {
+                    Size = Vector3.new(15, 15, 15),
+                    Transparency = 1
+                }):Play()
+                
+                game:GetService("Debris"):AddItem(effect, 1)
+                wait(1)
+            else
+                break
+            end
+        end
+    end)
+end)
+
+-- CONTROL - Take Control
+createCommandButton("Control", "🎮", Color3.fromRGB(100, 200, 150), function()
+    if not selectedPlayer or not selectedPlayer.Character then return end
+    
+    local char = selectedPlayer.Character
+    local targetHum = char:FindFirstChildOfClass("Humanoid")
+    
+    if targetHum then
+        workspace.CurrentCamera.CameraSubject = targetHum
+        
+        -- Control UI
+        local controlUI = Instance.new("ScreenGui")
+        controlUI.Name = "ControlUI"
+        controlUI.ResetOnSpawn = false
+        controlUI.Parent = player.PlayerGui
+        
+        local controlLabel = Instance.new("TextLabel")
+        controlLabel.Size = UDim2.new(0, 250, 0, 50)
+        controlLabel.Position = UDim2.new(0.5, -125, 0, 100)
+        controlLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        controlLabel.BackgroundTransparency = 0.3
+        controlLabel.BorderSizePixel = 0
+        controlLabel.Text = "CONTROLLING: " .. selectedPlayer.Name .. "\nPress Q to Exit"
+        controlLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
+        controlLabel.TextSize = 14
+        controlLabel.Font = Enum.Font.GothamBold
+        controlLabel.Parent = controlUI
+        
+        local labelCorner = Instance.new("UICorner")
+        labelCorner.CornerRadius = UDim.new(0, 10)
+        labelCorner.Parent = controlLabel
+        
+        -- Exit control
+        local connection
+        connection = UserInputService.InputBegan:Connect(function(input)
+            if input.KeyCode == Enum.KeyCode.Q then
+                workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChildOfClass("Humanoid")
+                controlUI:Destroy()
+                connection:Disconnect()
+            end
+        end)
+    end
+end)
+
+-- CRASH - Overload Client
+createCommandButton("Crash", "⚠️", Color3.fromRGB(200, 50, 50), function()
+    if not selectedPlayer or selectedPlayer == player then return end
+    
+    local char = selectedPlayer.Character
+    if char then
+        -- Extreme lag method (client-side only affects them if you're server)
+        -- This is more of a visual spam since it's client-side
+        spawn(function()
+            for i = 1, 100 do
+                local effect = Instance.new("Part")
+                effect.Size = Vector3.new(20, 20, 20)
+                effect.Position = char:GetPivot().Position
+                effect.Anchored = true
+                effect.CanCollide = false
+                effect.Material = Enum.Material.Neon
+                effect.BrickColor = BrickColor.Random()
+                effect.Transparency = 0.5
+                effect.Parent = workspace
+                
+                TweenService:Create(effect, TweenInfo.new(0.5), {
+                    Transparency = 1,
+                    Size = Vector3.new(50, 50, 50)
+                }):Play()
+                
+                game:GetService("Debris"):AddItem(effect, 0.5)
+            end
+        end)
+    end
+end)
+
+-- ═══════════════════════════════════════════════════════════
+--                    TOGGLE & UPDATES
+-- ═══════════════════════════════════════════════════════════
+
+-- Toggle Panel
+local isOpen = false
+ToggleButton.MouseButton1Click:Connect(function()
+    isOpen = not isOpen
+    MainFrame.Visible = isOpen
+    
+    if isOpen then
+        updatePlayerList()
+        TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 400, 0, 340)
+        }):Play()
+        TweenService:Create(ToggleButton, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
+            Rotation = 360,
+            BackgroundTransparency = 0.1
+        }):Play()
+    else
+        TweenService:Create(MainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+            Size = UDim2.new(0, 400, 0, 0)
+        }):Play()
+        TweenService:Create(ToggleButton, TweenInfo.new(0.3), {
+            Rotation = 0,
+            BackgroundTransparency = 0.2
+        }):Play()
+    end
+end)
+
+-- Hover Effects
+ToggleButton.MouseEnter:Connect(function()
+    TweenService:Create(ToggleButton, TweenInfo.new(0.2, Enum.EasingStyle.Elastic), {
+        Size = UDim2.new(0, 50, 0, 50),
+        BackgroundTransparency = 0.05
+    }):Play()
+    TweenService:Create(ToggleStroke, TweenInfo.new(0.2), {Transparency = 0.1}):Play()
+end)
+
+ToggleButton.MouseLeave:Connect(function()
+    TweenService:Create(ToggleButton, TweenInfo.new(0.2), {
+        Size = UDim2.new(0, 45, 0, 45),
+        BackgroundTransparency = isOpen and 0.1 or 0.2
+    }):Play()
+    TweenService:Create(ToggleStroke, TweenInfo.new(0.2), {Transparency = 0.3}):Play()
+end)
+
+-- Auto-update player list
+Players.PlayerAdded:Connect(updatePlayerList)
+Players.PlayerRemoving:Connect(function(plr)
+    if selectedPlayer == plr then
+        selectedPlayer = nil
+    end
+    updatePlayerList()
+end)
+
+-- Canvas size updates
+LeftList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    LeftPanel.CanvasSize = UDim2.new(0, 0, 0, LeftList.AbsoluteContentSize.Y + 8)
+end)
+
+RightList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    RightPanel.CanvasSize = UDim2.new(0, 0, 0, RightList.AbsoluteContentSize.Y + 8)
+end)
+
+-- Initial setup
+updatePlayerList()
+
+-- Notification
+local function showNotification(text)
+    local notif = Instance.new("TextLabel")
+    notif.Size = UDim2.new(0, 300, 0, 60)
+    notif.Position = UDim2.new(0.5, -150, 0, -70)
+    notif.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
+    notif.BackgroundTransparency = 0.2
+    notif.BorderSizePixel = 0
+    notif.Text = text
+    notif.TextColor3 = Color3.fromRGB(0, 0, 0)
+    notif.TextSize = 16
+    notif.Font = Enum.Font.GothamBold
+    notif.Parent = ScreenGui
+    
+    local notifCorner = Instance.new("UICorner")
+    notifCorner.CornerRadius = UDim.new(0, 12)
+    notifCorner.Parent = notif
+    
+    TweenService:Create(notif, TweenInfo.new(0.5, Enum.EasingStyle.Back), {
+        Position = UDim2.new(0.5, -150, 0, 80)
+    }):Play()
+    
+    delay(2, function()
+        TweenService:Create(notif, TweenInfo.new(0.3), {
+            Position = UDim2.new(0.5, -150, 0, -70)
+        }):Play()
+        wait(0.3)
+        notif:Destroy()
+    end)
+end
+
+showNotification("💲 ADMIN PANEL LOADED")
+
+print("🎮 Ultimate Admin Panel Loaded Successfully!")
+print("📍 Toggle button positioned top-right")
+print("⏱️ 15 second cooldown on all commands")
+print("🔄 Radgool: Inverts controls & camera for 10 seconds")
