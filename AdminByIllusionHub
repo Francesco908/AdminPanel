@@ -1,701 +1,409 @@
--- Admin Panel by Illusion Hub
+--[[
+    💲 ULTIMATE ADMIN PANEL - REPLICA EXACT IMAGE
+    Client-Side Executor Script
+    Author: Illusion Hub Replica
+]]
+
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local player = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
 
-if player.PlayerGui:FindFirstChild("UltimateAdminPanel") then
-    player.PlayerGui.UltimateAdminPanel:Destroy()
+local player = Players.LocalPlayer
+local Mouse = player:GetMouse()
+
+-- Cleanup vecchio
+for _, gui in pairs(CoreGui:GetChildren()) do
+    if gui.Name == "IllusionAdminPanel" then gui:Destroy() end
 end
 
-local cooldowns = {}
-local COOLDOWN_TIME = 15
+-- Variabili Globali
 local selectedPlayer = nil
+local cooldowns = {}
 
+-- 1. GUI CREATION
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "UltimateAdminPanel"
-ScreenGui.ResetOnSpawn = false
+ScreenGui.Name = "IllusionAdminPanel"
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.IgnoreGuiInset = true
-ScreenGui.Parent = player:WaitForChild("PlayerGui")
+ScreenGui.Parent = CoreGui -- Usa CoreGui per stare sopra tutto (se l'executor lo permette)
 
-local ToggleButton = Instance.new("TextButton")
-ToggleButton.Name = "ToggleButton"
-ToggleButton.Size = UDim2.new(0, 45, 0, 45)
-ToggleButton.Position = UDim2.new(1, -55, 0, 5)
-ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.BackgroundTransparency = 0.2
-ToggleButton.BorderSizePixel = 0
-ToggleButton.Text = "💲"
-ToggleButton.TextSize = 22
-ToggleButton.Font = Enum.Font.GothamBold
-ToggleButton.TextColor3 = Color3.fromRGB(0, 200, 0)
-ToggleButton.ZIndex = 10
-ToggleButton.Parent = ScreenGui
+-- Toggle Button (💲)
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Name = "Toggle"
+ToggleBtn.Size = UDim2.new(0, 40, 0, 40)
+ToggleBtn.Position = UDim2.new(1, -160, 0, 5) -- Posizionato vicino ai controlli Roblox
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+ToggleBtn.BorderSizePixel = 0
+ToggleBtn.Text = "💲"
+ToggleBtn.TextSize = 25
+ToggleBtn.TextColor3 = Color3.fromRGB(0, 255, 100)
+ToggleBtn.Font = Enum.Font.GothamBold
+ToggleBtn.Parent = ScreenGui
 
 local ToggleCorner = Instance.new("UICorner")
-ToggleCorner.CornerRadius = UDim.new(0, 10)
-ToggleCorner.Parent = ToggleButton
+ToggleCorner.CornerRadius = UDim.new(0, 8)
+ToggleCorner.Parent = ToggleBtn
 
-local ToggleStroke = Instance.new("UIStroke")
-ToggleStroke.Color = Color3.fromRGB(0, 255, 100)
-ToggleStroke.Thickness = 2
-ToggleStroke.Transparency = 0.3
-ToggleStroke.Parent = ToggleButton
-
+-- Main Frame (Il pannello scuro)
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 400, 0, 340)
-MainFrame.Position = UDim2.new(1, -410, 0, 55)
-MainFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-MainFrame.BackgroundTransparency = 0.88
+MainFrame.Size = UDim2.new(0, 550, 0, 350)
+MainFrame.Position = UDim2.new(0.5, -275, 0.5, -175)
+MainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 MainFrame.BorderSizePixel = 0
 MainFrame.Visible = false
-MainFrame.ClipsDescendants = true
-MainFrame.ZIndex = 5
+MainFrame.Active = true
+MainFrame.Draggable = true -- Movibile
 MainFrame.Parent = ScreenGui
 
 local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 12)
+MainCorner.CornerRadius = UDim.new(0, 5)
 MainCorner.Parent = MainFrame
 
-local MainStroke = Instance.new("UIStroke")
-MainStroke.Color = Color3.fromRGB(255, 255, 255)
-MainStroke.Thickness = 2.5
-MainStroke.Transparency = 0.5
-MainStroke.Parent = MainFrame
-
+-- Header (Titolo)
 local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1, 0, 0, 38)
-Header.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-Header.BackgroundTransparency = 0.75
+Header.Size = UDim2.new(1, 0, 0, 40)
+Header.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 Header.BorderSizePixel = 0
-Header.ZIndex = 6
 Header.Parent = MainFrame
 
 local HeaderCorner = Instance.new("UICorner")
-HeaderCorner.CornerRadius = UDim.new(0, 12)
+HeaderCorner.CornerRadius = UDim.new(0, 5)
 HeaderCorner.Parent = Header
 
-local HeaderBottom = Instance.new("Frame")
-HeaderBottom.Size = UDim2.new(1, 0, 0, 12)
-HeaderBottom.Position = UDim2.new(0, 0, 1, -12)
-HeaderBottom.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-HeaderBottom.BackgroundTransparency = 0.75
-HeaderBottom.BorderSizePixel = 0
-HeaderBottom.ZIndex = 6
-HeaderBottom.Parent = Header
+-- Fix angoli inferiori header
+local HeaderFix = Instance.new("Frame")
+HeaderFix.Size = UDim2.new(1, 0, 0, 10)
+HeaderFix.Position = UDim2.new(0, 0, 1, -10)
+HeaderFix.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+HeaderFix.BorderSizePixel = 0
+HeaderFix.Parent = Header
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 1, 0)
+Title.Text = "ADMIN PANEL"
+Title.Size = UDim2.new(1, -50, 1, 0)
+Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "💲 ADMIN PANEL"
-Title.TextColor3 = Color3.fromRGB(30, 30, 30)
-Title.TextSize = 16
-Title.Font = Enum.Font.GothamBold
-Title.ZIndex = 7
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 20
+Title.Font = Enum.Font.GothamBlack
+Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = Header
 
-local LeftPanel = Instance.new("ScrollingFrame")
-LeftPanel.Size = UDim2.new(0.48, -5, 1, -45)
-LeftPanel.Position = UDim2.new(0, 5, 0, 40)
-LeftPanel.BackgroundTransparency = 1
-LeftPanel.BorderSizePixel = 0
-LeftPanel.ScrollBarThickness = 5
-LeftPanel.ScrollBarImageColor3 = Color3.fromRGB(200, 200, 200)
-LeftPanel.ScrollBarImageTransparency = 0.5
-LeftPanel.CanvasSize = UDim2.new(0, 0, 0, 0)
-LeftPanel.ZIndex = 6
-LeftPanel.Parent = MainFrame
+-- Close Button (X Rossa)
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 40, 0, 40)
+CloseBtn.Position = UDim2.new(1, -40, 0, 0)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseBtn.BorderSizePixel = 0
+CloseBtn.Text = "X"
+CloseBtn.TextSize = 18
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Parent = Header
 
-local LeftList = Instance.new("UIListLayout")
-LeftList.Padding = UDim.new(0, 6)
-LeftList.SortOrder = Enum.SortOrder.LayoutOrder
-LeftList.Parent = LeftPanel
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 5)
+CloseCorner.Parent = CloseBtn
 
-local RightPanel = Instance.new("ScrollingFrame")
-RightPanel.Size = UDim2.new(0.48, -5, 1, -45)
-RightPanel.Position = UDim2.new(0.52, 0, 0, 40)
-RightPanel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-RightPanel.BackgroundTransparency = 0.82
-RightPanel.BorderSizePixel = 0
-RightPanel.ScrollBarThickness = 5
-RightPanel.ScrollBarImageColor3 = Color3.fromRGB(200, 200, 200)
-RightPanel.ScrollBarImageTransparency = 0.5
-RightPanel.CanvasSize = UDim2.new(0, 0, 0, 0)
-RightPanel.ZIndex = 6
-RightPanel.Parent = MainFrame
+-- Search Bar (Come nella foto: "Type Command")
+local SearchBar = Instance.new("TextBox")
+SearchBar.Size = UDim2.new(0.6, 0, 0, 30)
+SearchBar.Position = UDim2.new(0, 10, 0, 50)
+SearchBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+SearchBar.BorderSizePixel = 0
+SearchBar.Text = ""
+SearchBar.PlaceholderText = "Type Command..."
+SearchBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+SearchBar.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+SearchBar.TextSize = 14
+SearchBar.Font = Enum.Font.Gotham
+SearchBar.TextXAlignment = Enum.TextXAlignment.Left
+SearchBar.Parent = MainFrame
 
-local RightCorner = Instance.new("UICorner")
-RightCorner.CornerRadius = UDim.new(0, 10)
-RightCorner.Parent = RightPanel
+local SearchPad = Instance.new("UIPadding")
+SearchPad.PaddingLeft = UDim.new(0, 10)
+SearchPad.Parent = SearchBar
 
-local RightList = Instance.new("UIListLayout")
-RightList.Padding = UDim.new(0, 4)
-RightList.SortOrder = Enum.SortOrder.Name
-RightList.Parent = RightPanel
+local SearchCorner = Instance.new("UICorner")
+SearchCorner.CornerRadius = UDim.new(0, 5)
+SearchCorner.Parent = SearchBar
 
-local function checkCooldown(commandName)
-    if cooldowns[commandName] then
-        local timeLeft = cooldowns[commandName] - tick()
-        if timeLeft > 0 then
-            return false, math.ceil(timeLeft)
-        else
-            cooldowns[commandName] = nil
-        end
-    end
-    return true, 0
-end
+-- Container Sinistra (Griglia Comandi)
+local CommandContainer = Instance.new("ScrollingFrame")
+CommandContainer.Size = UDim2.new(0.6, 0, 1, -90)
+CommandContainer.Position = UDim2.new(0, 10, 0, 85)
+CommandContainer.BackgroundTransparency = 1
+CommandContainer.BorderSizePixel = 0
+CommandContainer.ScrollBarThickness = 2
+CommandContainer.Parent = MainFrame
 
-local function startCooldown(commandName, button)
-    cooldowns[commandName] = tick() + COOLDOWN_TIME
-    local originalText = button.Text
-    local originalColor = button.BackgroundColor3
-    button.BackgroundColor3 = Color3.fromRGB(120, 120, 120)
+local Grid = Instance.new("UIGridLayout")
+Grid.CellSize = UDim2.new(0.48, 0, 0, 40)
+Grid.CellPadding = UDim2.new(0.04, 0, 0, 10)
+Grid.SortOrder = Enum.SortOrder.LayoutOrder
+Grid.Parent = CommandContainer
+
+-- Container Destra (Player List)
+local PlayerContainer = Instance.new("ScrollingFrame")
+PlayerContainer.Size = UDim2.new(0.35, 0, 1, -50)
+PlayerContainer.Position = UDim2.new(0.63, 0, 0, 50) -- Allineato a destra
+PlayerContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+PlayerContainer.BorderSizePixel = 0
+PlayerContainer.ScrollBarThickness = 2
+PlayerContainer.Parent = MainFrame
+
+local PlayerListLayout = Instance.new("UIListLayout")
+PlayerListLayout.Padding = UDim.new(0, 5)
+PlayerListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+PlayerListLayout.Parent = PlayerContainer
+
+-- 2. FUNZIONI UTILI
+
+-- Funzione per creare bottoni comandi (Stile Foto)
+local function CreateCommandBtn(name, displayNames, icon)
+    local btn = Instance.new("TextButton")
+    btn.Name = name
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    btn.BorderSizePixel = 0
+    btn.Text = ""
+    btn.AutoButtonColor = false
+    btn.Parent = CommandContainer
+
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 5)
+    btnCorner.Parent = btn
     
-    spawn(function()
-        for i = COOLDOWN_TIME, 0, -1 do
-            if cooldowns[commandName] and button.Parent then
-                button.Text = originalText:gsub(" %(%d+s%)$", "") .. " (" .. i .. "s)"
-                wait(1)
-            else
-                break
+    local btnStroke = Instance.new("UIStroke")
+    btnStroke.Color = Color3.fromRGB(60, 60, 60)
+    btnStroke.Thickness = 1
+    btnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    btnStroke.Parent = btn
+
+    -- Icona
+    local ico = Instance.new("TextLabel")
+    ico.Text = icon
+    ico.Size = UDim2.new(0, 30, 1, 0)
+    ico.BackgroundTransparency = 1
+    ico.TextSize = 20
+    ico.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ico.Parent = btn
+
+    -- Testo (;command)
+    local txt = Instance.new("TextLabel")
+    txt.Text = ";" .. string.lower(displayNames)
+    txt.Size = UDim2.new(1, -35, 1, 0)
+    txt.Position = UDim2.new(0, 35, 0, 0)
+    txt.BackgroundTransparency = 1
+    txt.TextSize = 14
+    txt.TextColor3 = Color3.fromRGB(255, 255, 255)
+    txt.Font = Enum.Font.GothamBold
+    txt.TextXAlignment = Enum.TextXAlignment.Left
+    txt.Parent = btn
+
+    -- Effetto Click
+    btn.MouseButton1Click:Connect(function()
+        -- Reset colori
+        for _, c in pairs(CommandContainer:GetChildren()) do
+            if c:IsA("TextButton") then
+                c.UIStroke.Color = Color3.fromRGB(60, 60, 60)
+                c.UIStroke.Thickness = 1
             end
         end
-        if button.Parent then
-            button.Text = originalText:gsub(" %(%d+s%)$", "")
-            button.BackgroundColor3 = originalColor
+        -- Evidenzia questo (Giallo/Oro come foto)
+        btnStroke.Color = Color3.fromRGB(255, 215, 0) 
+        btnStroke.Thickness = 2
+        
+        -- Esegui comando
+        if _G.ExecuteCommand then
+            _G.ExecuteCommand(name)
         end
-        cooldowns[commandName] = nil
     end)
 end
 
-local function createCommandButton(name, icon, color, callback)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, 0, 0, 35)
-    btn.BackgroundColor3 = color
-    btn.BackgroundTransparency = 0.35
-    btn.BorderSizePixel = 0
-    btn.Text = icon .. " " .. name
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.TextSize = 13
-    btn.Font = Enum.Font.GothamBold
-    btn.AutoButtonColor = false
-    btn.ZIndex = 7
-    btn.Parent = LeftPanel
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = btn
-    
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(255, 255, 255)
-    stroke.Thickness = 1.5
-    stroke.Transparency = 0.6
-    stroke.Parent = btn
-    
-    btn.MouseEnter:Connect(function()
-        if not cooldowns[name] then
-            TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundTransparency = 0.15, TextSize = 14}):Play()
-            TweenService:Create(stroke, TweenInfo.new(0.15), {Transparency = 0.3}):Play()
-        end
-    end)
-    
-    btn.MouseLeave:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundTransparency = 0.35, TextSize = 13}):Play()
-        TweenService:Create(stroke, TweenInfo.new(0.15), {Transparency = 0.6}):Play()
-    end)
-    
-    btn.MouseButton1Click:Connect(function()
-        local canUse, timeLeft = checkCooldown(name)
-        
-        if not canUse then
-            local originalText = btn.Text:gsub(" %(%d+s%)$", "")
-            btn.Text = "Wait " .. timeLeft .. "s!"
-            TweenService:Create(btn, TweenInfo.new(0.1, Enum.EasingStyle.Elastic), {TextSize = 15}):Play()
-            wait(0.1)
-            TweenService:Create(btn, TweenInfo.new(0.1), {TextSize = 13}):Play()
-            wait(0.5)
-            btn.Text = originalText
-            return
-        end
-        
-        if not selectedPlayer then
-            btn.Text = "Select Player!"
-            wait(1)
-            btn.Text = icon .. " " .. name
-            return
-        end
-        
-        callback()
-        startCooldown(name, btn)
-        
-        TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundTransparency = 0}):Play()
-        wait(0.1)
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.35}):Play()
-    end)
-    
-    return btn
-end
+-- Funzione per creare Player nella lista (con Avatar)
+local function CreatePlayerEntry(plr)
+    local entry = Instance.new("TextButton")
+    entry.Name = plr.Name
+    entry.Size = UDim2.new(1, 0, 0, 40)
+    entry.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    entry.BackgroundTransparency = 0.5
+    entry.BorderSizePixel = 0
+    entry.Text = ""
+    entry.Parent = PlayerContainer
 
-local function createPlayerButton(plr)
-    local btn = Instance.new("TextButton")
-    btn.Name = plr.Name
-    btn.Size = UDim2.new(1, -8, 0, 30)
-    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    btn.BackgroundTransparency = 0.65
-    btn.BorderSizePixel = 0
-    btn.Text = "👤 " .. plr.Name
-    btn.TextColor3 = Color3.fromRGB(40, 40, 40)
-    btn.TextSize = 12
-    btn.Font = Enum.Font.GothamBold
-    btn.TextXAlignment = Enum.TextXAlignment.Left
-    btn.AutoButtonColor = false
-    btn.ZIndex = 7
-    btn.Parent = RightPanel
+    -- Avatar Image
+    local avatar = Instance.new("ImageLabel")
+    avatar.Size = UDim2.new(0, 30, 0, 30)
+    avatar.Position = UDim2.new(0, 5, 0.5, -15)
+    avatar.BackgroundTransparency = 1
+    -- Ottieni immagine testa
+    local content, isReady = Players:GetUserThumbnailAsync(plr.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)
+    avatar.Image = content
+    avatar.Parent = entry
     
-    local padding = Instance.new("UIPadding")
-    padding.PaddingLeft = UDim.new(0, 10)
-    padding.Parent = btn
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 7)
-    corner.Parent = btn
-    
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(200, 200, 200)
-    stroke.Thickness = 1
-    stroke.Transparency = 0.7
-    stroke.Parent = btn
-    
-    btn.MouseButton1Click:Connect(function()
+    local avCorner = Instance.new("UICorner")
+    avCorner.CornerRadius = UDim.new(1, 0) -- Rotondo
+    avCorner.Parent = avatar
+
+    -- Nome
+    local nameLbl = Instance.new("TextLabel")
+    nameLbl.Text = plr.Name
+    nameLbl.Size = UDim2.new(1, -45, 1, 0)
+    nameLbl.Position = UDim2.new(0, 45, 0, 0)
+    nameLbl.BackgroundTransparency = 1
+    nameLbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+    nameLbl.TextSize = 12
+    nameLbl.Font = Enum.Font.GothamSemibold
+    nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+    nameLbl.Parent = entry
+
+    -- Selezione
+    entry.MouseButton1Click:Connect(function()
         selectedPlayer = plr
-        
-        for _, child in pairs(RightPanel:GetChildren()) do
-            if child:IsA("TextButton") then
-                TweenService:Create(child, TweenInfo.new(0.2), {
-                    BackgroundTransparency = 0.65,
-                    TextColor3 = Color3.fromRGB(40, 40, 40)
-                }):Play()
-                local s = child:FindFirstChild("UIStroke")
-                if s then
-                    TweenService:Create(s, TweenInfo.new(0.2), {
-                        Color = Color3.fromRGB(200, 200, 200),
-                        Transparency = 0.7
-                    }):Play()
-                end
+        for _, c in pairs(PlayerContainer:GetChildren()) do
+            if c:IsA("TextButton") then
+                c.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+                c.NameLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
             end
         end
-        
-        TweenService:Create(btn, TweenInfo.new(0.2), {
-            BackgroundTransparency = 0.25,
-            TextColor3 = Color3.fromRGB(0, 0, 0)
-        }):Play()
-        TweenService:Create(stroke, TweenInfo.new(0.2), {
-            Color = Color3.fromRGB(0, 255, 100),
-            Transparency = 0.3
-        }):Play()
+        entry.BackgroundColor3 = Color3.fromRGB(0, 150, 80) -- Verde selezione
+        nameLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
     end)
     
-    btn.MouseEnter:Connect(function()
-        if selectedPlayer ~= plr then
-            TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundTransparency = 0.45}):Play()
-        end
-    end)
-    
-    btn.MouseLeave:Connect(function()
-        if selectedPlayer ~= plr then
-            TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundTransparency = 0.65}):Play()
-        end
-    end)
+    entry.NameLabel = nameLbl -- Reference rapida
 end
 
-local function updatePlayerList()
-    for _, child in pairs(RightPanel:GetChildren()) do
-        if child:IsA("TextButton") then
-            child:Destroy()
-        end
+-- Aggiorna Lista Player
+local function RefreshPlayers()
+    for _, c in pairs(PlayerContainer:GetChildren()) do
+        if c:IsA("TextButton") then c:Destroy() end
     end
-    
-    for _, plr in pairs(Players:GetPlayers()) do
-        createPlayerButton(plr)
+    for _, p in pairs(Players:GetPlayers()) do
+        CreatePlayerEntry(p)
     end
-    
-    RightPanel.CanvasSize = UDim2.new(0, 0, 0, RightList.AbsoluteContentSize.Y + 8)
 end
 
-createCommandButton("Radgool", "🔄", Color3.fromRGB(100, 150, 255), function()
-    if not selectedPlayer or not selectedPlayer.Character then return end
-    
-    local char = selectedPlayer.Character
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
-    local head = char:FindFirstChild("Head")
-    
-    if humanoid and head then
-        local billboardGui = Instance.new("BillboardGui")
-        billboardGui.Size = UDim2.new(0, 100, 0, 50)
-        billboardGui.StudsOffset = Vector3.new(0, 3, 0)
-        billboardGui.AlwaysOnTop = true
-        billboardGui.Parent = head
-        
-        local timerBg = Instance.new("Frame")
-        timerBg.Size = UDim2.new(1, 0, 1, 0)
-        timerBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        timerBg.BackgroundTransparency = 0.5
-        timerBg.BorderSizePixel = 0
-        timerBg.Parent = billboardGui
-        
-        local bgCorner = Instance.new("UICorner")
-        bgCorner.CornerRadius = UDim.new(0, 8)
-        bgCorner.Parent = timerBg
-        
-        local timerLabel = Instance.new("TextLabel")
-        timerLabel.Size = UDim2.new(1, 0, 1, 0)
-        timerLabel.BackgroundTransparency = 1
-        timerLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
-        timerLabel.TextSize = 32
-        timerLabel.Font = Enum.Font.GothamBold
-        timerLabel.TextStrokeTransparency = 0.5
-        timerLabel.Parent = timerBg
-        
-        local moveConnection = RunService.Heartbeat:Connect(function()
-            if humanoid and humanoid.Parent and humanoid.MoveDirection.Magnitude > 0 then
-                humanoid:Move(-humanoid.MoveDirection * 2.5)
-            end
-        end)
-        
-        local camConnection
-        if selectedPlayer == player then
-            camConnection = UserInputService.InputChanged:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseMovement then
-                    local delta = input.Delta
-                    workspace.CurrentCamera.CFrame = workspace.CurrentCamera.CFrame * CFrame.Angles(
-                        math.rad(-delta.Y * 0.4),
-                        math.rad(-delta.X * 0.4),
-                        0
-                    )
-                end
-            end)
-        end
-        
-        spawn(function()
-            for i = 10, 0, -1 do
-                if billboardGui.Parent then
-                    timerLabel.Text = "⏰ " .. tostring(i)
-                    TweenService:Create(timerLabel, TweenInfo.new(0.3, Enum.EasingStyle.Elastic), {TextSize = 38}):Play()
-                    wait(0.3)
-                    TweenService:Create(timerLabel, TweenInfo.new(0.2), {TextSize = 32}):Play()
-                    wait(0.7)
-                else
-                    break
-                end
-            end
-            
-            billboardGui:Destroy()
-            moveConnection:Disconnect()
-            if camConnection then camConnection:Disconnect() end
-        end)
-    end
-end)
+Players.PlayerAdded:Connect(RefreshPlayers)
+Players.PlayerRemoving:Connect(RefreshPlayers)
+RefreshPlayers()
 
-createCommandButton("Jail", "🔒", Color3.fromRGB(150, 100, 255), function()
-    if not selectedPlayer or not selectedPlayer.Character then return end
-    
-    local char = selectedPlayer.Character
-    local rootPart = char:FindFirstChild("HumanoidRootPart")
-    
-    if rootPart then
-        local jail = Instance.new("Model")
-        jail.Name = "PrisonCell"
-        jail.Parent = workspace
-        
-        local function createPart(size, pos)
-            local part = Instance.new("Part")
-            part.Size = size
-            part.Position = rootPart.Position + pos
-            part.Anchored = true
-            part.BrickColor = BrickColor.new("Dark stone grey")
-            part.Material = Enum.Material.Metal
-            part.Parent = jail
-        end
-        
-        createPart(Vector3.new(9, 0.5, 9), Vector3.new(0, -3.5, 0))
-        createPart(Vector3.new(9, 0.5, 9), Vector3.new(0, 7, 0))
-        
-        for x = -4, 4, 1 do
-            createPart(Vector3.new(0.3, 10, 0.3), Vector3.new(x, 1.75, -4.5))
-            createPart(Vector3.new(0.3, 10, 0.3), Vector3.new(x, 1.75, 4.5))
-        end
-        
-        for z = -4, 4, 1 do
-            createPart(Vector3.new(0.3, 10, 0.3), Vector3.new(-4.5, 1.75, z))
-            createPart(Vector3.new(0.3, 10, 0.3), Vector3.new(4.5, 1.75, z))
-        end
-        
-        game:GetService("Debris"):AddItem(jail, 10)
-    end
-end)
+-- 3. LOGICA COMANDI (Client Side Physics)
 
-createCommandButton("Rocket", "🚀", Color3.fromRGB(255, 100, 100), function()
-    if not selectedPlayer or not selectedPlayer.Character then return end
-    
+_G.ExecuteCommand = function(cmd)
+    if not selectedPlayer then return end
     local char = selectedPlayer.Character
-    local rootPart = char:FindFirstChild("HumanoidRootPart")
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChild("Humanoid")
     
-    if rootPart then
+    if not root or not hum then return end
+
+    if cmd == "Rocket" then
+        -- Razzo Visuale + Velocity
         local rocket = Instance.new("Part")
-        rocket.Size = Vector3.new(1.5, 5, 1.5)
-        rocket.Position = rootPart.Position - Vector3.new(0, 2, 0)
+        rocket.Size = Vector3.new(1, 4, 1)
+        rocket.Position = root.Position
         rocket.BrickColor = BrickColor.new("Bright red")
         rocket.Material = Enum.Material.Neon
         rocket.CanCollide = false
         rocket.Parent = workspace
         
-        local weld = Instance.new("WeldConstraint")
-        weld.Part0 = rootPart
-        weld.Part1 = rocket
-        weld.Parent = rocket
+        local w = Instance.new("WeldConstraint", rocket)
+        w.Part0 = root
+        w.Part1 = rocket
         
-        local bv = Instance.new("BodyVelocity")
-        bv.Velocity = Vector3.new(0, 150, 0)
+        local bv = Instance.new("BodyVelocity", root)
+        bv.Velocity = Vector3.new(0, 100, 0)
         bv.MaxForce = Vector3.new(0, math.huge, 0)
-        bv.Parent = rootPart
         
-        local fire = Instance.new("Fire")
-        fire.Size = 12
-        fire.Heat = 15
-        fire.Parent = rocket
+        game:GetService("Debris"):AddItem(rocket, 3)
+        game:GetService("Debris"):AddItem(bv, 3)
         
-        local smoke = Instance.new("Smoke")
-        smoke.Size = 8
-        smoke.RiseVelocity = -5
-        smoke.Parent = rocket
-        
-        delay(2.5, function()
-            local explosion = Instance.new("Explosion")
-            explosion.Position = rootPart.Position
-            explosion.BlastRadius = 18
-            explosion.BlastPressure = 600000
-            explosion.Parent = workspace
-            
-            rocket:Destroy()
-            bv:Destroy()
-        end)
-    end
-end)
-
-createCommandButton("Balloon", "🎈", Color3.fromRGB(255, 200, 100), function()
-    if not selectedPlayer or not selectedPlayer.Character then return end
-    
-    local char = selectedPlayer.Character
-    local rootPart = char:FindFirstChild("HumanoidRootPart")
-    
-    if rootPart then
-        local colors = {
-            Color3.fromRGB(255, 100, 100),
-            Color3.fromRGB(100, 255, 100),
-            Color3.fromRGB(100, 100, 255),
-            Color3.fromRGB(255, 255, 100),
-            Color3.fromRGB(255, 100, 255),
-            Color3.fromRGB(100, 255, 255)
-        }
-        
-        for i = 1, 8 do
-            local balloon = Instance.new("Part")
-            balloon.Shape = Enum.PartType.Ball
-            balloon.Size = Vector3.new(2.5, 2.5, 2.5)
-            balloon.Position = rootPart.Position + Vector3.new(math.random(-3, 3), 5, math.random(-3, 3))
-            balloon.Color = colors[math.random(1, #colors)]
-            balloon.Material = Enum.Material.Neon
-            balloon.CanCollide = false
-            balloon.Parent = workspace
-            
-            local att0 = Instance.new("Attachment", balloon)
-            local att1 = Instance.new("Attachment", rootPart)
-            
-            local rope = Instance.new("RopeConstraint")
-            rope.Attachment0 = att0
-            rope.Attachment1 = att1
-            rope.Length = 6
-            rope.Visible = true
-            rope.Thickness = 0.15
-            rope.Color = BrickColor.new("White")
-            rope.Parent = balloon
-            
-            local bv = Instance.new("BodyVelocity")
-            bv.Velocity = Vector3.new(0, 30, 0)
-            bv.MaxForce = Vector3.new(0, 5000, 0)
-            bv.Parent = balloon
-            
-            game:GetService("Debris"):AddItem(balloon, 20)
+    elseif cmd == "Ragdoll" then
+        -- "Inverse" controls logic requested
+        if selectedPlayer == player then
+           -- Local inversion logic (only works on self easily)
+           hum.WalkSpeed = -16 
+           wait(10)
+           hum.WalkSpeed = 16
         end
-    end
-end)
-
-createCommandButton("Explode", "💥", Color3.fromRGB(255, 80, 80), function()
-    if not selectedPlayer or not selectedPlayer.Character then return end
-    
-    local char = selectedPlayer.Character
-    
-    spawn(function()
-        for i = 1, 10 do
-            local rootPart = char:FindFirstChild("HumanoidRootPart")
-            if rootPart then
-                local explosion = Instance.new("Explosion")
-                explosion.Position = rootPart.Position
-                explosion.BlastRadius = 10
-                explosion.BlastPressure = 250000
-                explosion.ExplosionType = Enum.ExplosionType.NoCraters
-                explosion.Parent = workspace
-                
-                local effect = Instance.new("Part")
-                effect.Size = Vector3.new(1, 1, 1)
-                effect.Position = rootPart.Position
-                effect.Anchored = true
-                effect.CanCollide = false
-                effect.Material = Enum.Material.Neon
-                effect.BrickColor = BrickColor.new("Really red")
-                effect.Transparency = 0.3
-                effect.Shape = Enum.PartType.Ball
-                effect.Parent = workspace
-                
-                TweenService:Create(effect, TweenInfo.new(0.8), {
-                    Size = Vector3.new(15, 15, 15),
-                    Transparency = 1
-                }):Play()
-                
-                game:GetService("Debris"):AddItem(effect, 1)
-                wait(1)
-            else
-                break
-            end
+        
+    elseif cmd == "Jail" then
+        -- Visual Jail
+        local jailModel = Instance.new("Model", workspace)
+        local function part(pos, sz)
+            local p = Instance.new("Part", jailModel)
+            p.Anchored = true
+            p.Size = sz
+            p.Position = root.Position + pos
+            p.Transparency = 0.5
+            p.Color = Color3.new(0,0,0)
         end
-    end)
-end)
+        part(Vector3.new(0,0,3), Vector3.new(6,6,0.5))
+        part(Vector3.new(0,0,-3), Vector3.new(6,6,0.5))
+        part(Vector3.new(3,0,0), Vector3.new(0.5,6,6))
+        part(Vector3.new(-3,0,0), Vector3.new(0.5,6,6))
+        game:GetService("Debris"):AddItem(jailModel, 10)
 
-createCommandButton("Control", "🎮", Color3.fromRGB(100, 200, 150), function()
-    if not selectedPlayer or not selectedPlayer.Character then return end
-    
-    local char = selectedPlayer.Character
-    local targetHum = char:FindFirstChildOfClass("Humanoid")
-    
-    if targetHum then
-        workspace.CurrentCamera.CameraSubject = targetHum
+    elseif cmd == "Balloon" then
+        -- Balloon Visual
+        local b = Instance.new("Part", workspace)
+        b.Shape = Enum.PartType.Ball
+        b.Size = Vector3.new(3,3,3)
+        b.Position = root.Position + Vector3.new(0,6,0)
+        b.Color = Color3.fromRGB(255,0,0)
+        b.Anchored = false
         
-        local controlUI = Instance.new("ScreenGui")
-        controlUI.Name = "ControlUI"
-        controlUI.ResetOnSpawn = false
-        controlUI.Parent = player.PlayerGui
+        local att1 = Instance.new("Attachment", b)
+        local att2 = Instance.new("Attachment", root)
+        local rope = Instance.new("RopeConstraint", b)
+        rope.Attachment0 = att1
+        rope.Attachment1 = att2
+        rope.Length = 5
+        rope.Visible = true
         
-        local controlLabel = Instance.new("TextLabel")
-        controlLabel.Size = UDim2.new(0, 250, 0, 50)
-        controlLabel.Position = UDim2.new(0.5, -125, 0, 100)
-        controlLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        controlLabel.BackgroundTransparency = 0.3
-        controlLabel.BorderSizePixel = 0
-        controlLabel.Text = "CONTROLLING: " .. selectedPlayer.Name .. "\nPress Q to Exit"
-        controlLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
-        controlLabel.TextSize = 14
-        controlLabel.Font = Enum.Font.GothamBold
-        controlLabel.Parent = controlUI
+        local bv = Instance.new("BodyVelocity", b)
+        bv.Velocity = Vector3.new(0,20,0)
+        bv.MaxForce = Vector3.new(0,2000,0)
+        game:GetService("Debris"):AddItem(b, 10)
+
+    elseif cmd == "Control" then
+        workspace.CurrentCamera.CameraSubject = hum
         
-        local labelCorner = Instance.new("UICorner")
-        labelCorner.CornerRadius = UDim.new(0, 10)
-        labelCorner.Parent = controlLabel
+    elseif cmd == "Nightvision" then
+        local light = Instance.new("PointLight", root)
+        light.Range = 60
+        light.Brightness = 2
         
-        local connection
-        connection = UserInputService.InputBegan:Connect(function(input)
-            if input.KeyCode == Enum.KeyCode.Q then
-                workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChildOfClass("Humanoid")
-                controlUI:Destroy()
-                connection:Disconnect()
-            end
-        end)
+    elseif cmd == "Tiny" then
+         -- Client side resizing (only works well if you are server, but tries visual)
+         if hum then
+             hum.HipHeight = 0.5
+         end
     end
-end)
+end
 
-createCommandButton("Crash", "⚠️", Color3.fromRGB(200, 50, 50), function()
-    if not selectedPlayer or selectedPlayer == player then return end
-    
-    local char = selectedPlayer.Character
-    if char then
-        spawn(function()
-            for i = 1, 100 do
-                local effect = Instance.new("Part")
-                effect.Size = Vector3.new(20, 20, 20)
-                effect.Position = char:GetPivot().Position
-                effect.Anchored = true
-                effect.CanCollide = false
-                effect.Material = Enum.Material.Neon
-                effect.BrickColor = BrickColor.Random()
-                effect.Transparency = 0.5
-                effect.Parent = workspace
-                
-                TweenService:Create(effect, TweenInfo.new(0.5), {
-                    Transparency = 1,
-                    Size = Vector3.new(50, 50, 50)
-                }):Play()
-                
-                game:GetService("Debris"):AddItem(effect, 0.5)
-            end
-        end)
-    end
-end)
+-- 4. CREAZIONE BOTTONI (Ordine della foto)
+CreateCommandBtn("Rocket", "Rocket", "🚀")
+CreateCommandBtn("Ragdoll", "Ragdoll", "🤸")
+CreateCommandBtn("Balloon", "Balloon", "🎈")
+CreateCommandBtn("Ragdoll", "Inverse", "🔃") -- Reuse logic
+CreateCommandBtn("Nightvision", "Nightvision", "👁️")
+CreateCommandBtn("Jail", "Jail", "👮")
+CreateCommandBtn("Control", "Control", "🎭")
+CreateCommandBtn("Tiny", "Tiny", "🐜")
 
+
+-- 5. APRI/CHIUDI
 local isOpen = false
-ToggleButton.MouseButton1Click:Connect(function()
+ToggleBtn.MouseButton1Click:Connect(function()
     isOpen = not isOpen
     MainFrame.Visible = isOpen
-    
-    if isOpen then
-        updatePlayerList()
-        TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-            Size = UDim2.new(0, 400, 0, 340)
-        }):Play()
-        TweenService:Create(ToggleButton, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
-            Rotation = 360,
-            BackgroundTransparency = 0.1
-        }):Play()
-    else
-        TweenService:Create(MainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
-            Size = UDim2.new(0, 400, 0, 0)
-        }):Play()
-        TweenService:Create(ToggleButton, TweenInfo.new(0.3), {
-            Rotation = 0,
-            BackgroundTransparency = 0.2
-        }):Play()
-    end
 end)
 
-ToggleButton.MouseEnter:Connect(function()
-    TweenService:Create(ToggleButton, TweenInfo.new(0.2, Enum.EasingStyle.Elastic), {
-        Size = UDim2.new(0, 50, 0, 50),
-        BackgroundTransparency = 0.05
-    }):Play()
-    TweenService:Create(ToggleStroke, TweenInfo.new(0.2), {Transparency = 0.1}):Play()
+CloseBtn.MouseButton1Click:Connect(function()
+    isOpen = false
+    MainFrame.Visible = false
 end)
-
-ToggleButton.MouseLeave:Connect(function()
-    TweenService:Create(ToggleButton, TweenInfo.new(0.2), {
-        Size = UDim2.new(0, 45, 0, 45),
-        BackgroundTransparency = isOpen and 0.1 or 0.2
-    }):Play()
-    TweenService:Create(ToggleStroke, TweenInfo.new(0.2), {Transparency = 0.3}):Play()
-end)
-
-Players.PlayerAdded:Connect(updatePlayerList)
-Players.PlayerRemoving:Connect(function(plr)
-    if selectedPlayer == plr then selectedPlayer = nil end
-    updatePlayerList()
-end)
-
-LeftList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    LeftPanel.CanvasSize = UDim2.new(0, 0, 0, LeftList.AbsoluteContentSize.Y + 8)
-end)
-
-RightList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    RightPanel.CanvasSize = UDim2.new(0, 0, 0, RightList.AbsoluteContentSize.Y + 8)
-end)
-
-updatePlayerList()
