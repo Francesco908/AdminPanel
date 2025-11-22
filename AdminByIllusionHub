@@ -1,42 +1,55 @@
 --[[
-    💲 ULTIMATE ADMIN PANEL - REPLICA EXACT IMAGE
+    💲 ULTIMATE ADMIN PANEL - FULL VERSION
     Client-Side Executor Script
-    Author: Illusion Hub Replica
+    Creato per funzionare al 100%
 ]]
 
+-- SERVIZI
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
+local Debris = game:GetService("Debris")
 
 local player = Players.LocalPlayer
-local Mouse = player:GetMouse()
+local mouse = player:GetMouse()
 
--- Cleanup vecchio
+-- 1. PULIZIA (Evita doppi pannelli)
 for _, gui in pairs(CoreGui:GetChildren()) do
     if gui.Name == "IllusionAdminPanel" then gui:Destroy() end
 end
+for _, gui in pairs(player:WaitForChild("PlayerGui"):GetChildren()) do
+    if gui.Name == "IllusionAdminPanel" then gui:Destroy() end
+end
 
--- Variabili Globali
+-- VARIABILI GLOBALI
 local selectedPlayer = nil
-local cooldowns = {}
+local PanelOpen = false
 
--- 1. GUI CREATION
+-- 2. CREAZIONE GUI (UI DESIGN)
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "IllusionAdminPanel"
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.Parent = CoreGui -- Usa CoreGui per stare sopra tutto (se l'executor lo permette)
+ScreenGui.IgnoreGuiInset = true
 
--- Toggle Button (💲)
+-- Tenta di mettere in CoreGui (più sicuro), altrimenti PlayerGui
+pcall(function()
+    ScreenGui.Parent = CoreGui
+end)
+if not ScreenGui.Parent then
+    ScreenGui.Parent = player:WaitForChild("PlayerGui")
+end
+
+-- PULSANTE TOGGLE (💲) - Alto a Destra
 local ToggleBtn = Instance.new("TextButton")
 ToggleBtn.Name = "Toggle"
-ToggleBtn.Size = UDim2.new(0, 40, 0, 40)
-ToggleBtn.Position = UDim2.new(1, -160, 0, 5) -- Posizionato vicino ai controlli Roblox
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+ToggleBtn.Size = UDim2.new(0, 45, 0, 45)
+ToggleBtn.Position = UDim2.new(1, -100, 0, 10) -- Posizione fissa alto destra
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 ToggleBtn.BorderSizePixel = 0
 ToggleBtn.Text = "💲"
-ToggleBtn.TextSize = 25
+ToggleBtn.TextSize = 24
 ToggleBtn.TextColor3 = Color3.fromRGB(0, 255, 100)
 ToggleBtn.Font = Enum.Font.GothamBold
 ToggleBtn.Parent = ScreenGui
@@ -45,40 +58,35 @@ local ToggleCorner = Instance.new("UICorner")
 ToggleCorner.CornerRadius = UDim.new(0, 8)
 ToggleCorner.Parent = ToggleBtn
 
--- Main Frame (Il pannello scuro)
+local ToggleStroke = Instance.new("UIStroke")
+ToggleStroke.Color = Color3.fromRGB(0, 255, 100)
+ToggleStroke.Thickness = 1.5
+ToggleStroke.Transparency = 0.5
+ToggleStroke.Parent = ToggleBtn
+
+-- MAIN FRAME (Il Pannello)
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 550, 0, 350)
-MainFrame.Position = UDim2.new(0.5, -275, 0.5, -175)
-MainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+MainFrame.Size = UDim2.new(0, 600, 0, 380)
+MainFrame.Position = UDim2.new(0.5, -300, 0.5, -190)
+MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 MainFrame.BorderSizePixel = 0
-MainFrame.Visible = false
+MainFrame.Visible = false -- Parte chiuso
 MainFrame.Active = true
-MainFrame.Draggable = true -- Movibile
+MainFrame.Draggable = true -- Si può muovere
+MainFrame.ClipsDescendants = true
 MainFrame.Parent = ScreenGui
 
 local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 5)
+MainCorner.CornerRadius = UDim.new(0, 6)
 MainCorner.Parent = MainFrame
 
--- Header (Titolo)
+-- HEADER
 local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1, 0, 0, 40)
-Header.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Header.Size = UDim2.new(1, 0, 0, 45)
+Header.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 Header.BorderSizePixel = 0
 Header.Parent = MainFrame
-
-local HeaderCorner = Instance.new("UICorner")
-HeaderCorner.CornerRadius = UDim.new(0, 5)
-HeaderCorner.Parent = Header
-
--- Fix angoli inferiori header
-local HeaderFix = Instance.new("Frame")
-HeaderFix.Size = UDim2.new(1, 0, 0, 10)
-HeaderFix.Position = UDim2.new(0, 0, 1, -10)
-HeaderFix.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-HeaderFix.BorderSizePixel = 0
-HeaderFix.Parent = Header
 
 local Title = Instance.new("TextLabel")
 Title.Text = "ADMIN PANEL"
@@ -91,32 +99,29 @@ Title.Font = Enum.Font.GothamBlack
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = Header
 
--- Close Button (X Rossa)
+-- TASTO CHIUDI (X)
 local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 40, 0, 40)
-CloseBtn.Position = UDim2.new(1, -40, 0, 0)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-CloseBtn.BorderSizePixel = 0
 CloseBtn.Text = "X"
-CloseBtn.TextSize = 18
+CloseBtn.Size = UDim2.new(0, 45, 1, 0)
+CloseBtn.Position = UDim2.new(1, -45, 0, 0)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseBtn.BackgroundTransparency = 0
+CloseBtn.BorderSizePixel = 0
 CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 18
 CloseBtn.Font = Enum.Font.GothamBold
 CloseBtn.Parent = Header
 
-local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 5)
-CloseCorner.Parent = CloseBtn
-
--- Search Bar (Come nella foto: "Type Command")
+-- SEARCH BAR
 local SearchBar = Instance.new("TextBox")
-SearchBar.Size = UDim2.new(0.6, 0, 0, 30)
-SearchBar.Position = UDim2.new(0, 10, 0, 50)
-SearchBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+SearchBar.Size = UDim2.new(0.58, 0, 0, 35)
+SearchBar.Position = UDim2.new(0, 10, 0, 55)
+SearchBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 SearchBar.BorderSizePixel = 0
 SearchBar.Text = ""
 SearchBar.PlaceholderText = "Type Command..."
-SearchBar.TextColor3 = Color3.fromRGB(255, 255, 255)
 SearchBar.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+SearchBar.TextColor3 = Color3.fromRGB(255, 255, 255)
 SearchBar.TextSize = 14
 SearchBar.Font = Enum.Font.Gotham
 SearchBar.TextXAlignment = Enum.TextXAlignment.Left
@@ -127,283 +132,387 @@ SearchPad.PaddingLeft = UDim.new(0, 10)
 SearchPad.Parent = SearchBar
 
 local SearchCorner = Instance.new("UICorner")
-SearchCorner.CornerRadius = UDim.new(0, 5)
+SearchCorner.CornerRadius = UDim.new(0, 6)
 SearchCorner.Parent = SearchBar
 
--- Container Sinistra (Griglia Comandi)
-local CommandContainer = Instance.new("ScrollingFrame")
-CommandContainer.Size = UDim2.new(0.6, 0, 1, -90)
-CommandContainer.Position = UDim2.new(0, 10, 0, 85)
-CommandContainer.BackgroundTransparency = 1
-CommandContainer.BorderSizePixel = 0
-CommandContainer.ScrollBarThickness = 2
-CommandContainer.Parent = MainFrame
+local SearchLabel = Instance.new("TextLabel")
+SearchLabel.Text = "Type Command"
+SearchLabel.Size = UDim2.new(1, 0, 0, 15)
+SearchLabel.Position = UDim2.new(0, 0, 0, -20)
+SearchLabel.BackgroundTransparency = 1
+SearchLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+SearchLabel.TextSize = 12
+SearchLabel.Font = Enum.Font.GothamBold
+SearchLabel.TextXAlignment = Enum.TextXAlignment.Left
+SearchLabel.Parent = SearchBar
+
+-- SCROLLING FRAME COMANDI (Sinistra)
+local CommandsScroll = Instance.new("ScrollingFrame")
+CommandsScroll.Size = UDim2.new(0.58, 0, 1, -100)
+CommandsScroll.Position = UDim2.new(0, 10, 0, 95)
+CommandsScroll.BackgroundTransparency = 1
+CommandsScroll.BorderSizePixel = 0
+CommandsScroll.ScrollBarThickness = 2
+CommandsScroll.Parent = MainFrame
 
 local Grid = Instance.new("UIGridLayout")
-Grid.CellSize = UDim2.new(0.48, 0, 0, 40)
+Grid.CellSize = UDim2.new(0.48, 0, 0, 50)
 Grid.CellPadding = UDim2.new(0.04, 0, 0, 10)
 Grid.SortOrder = Enum.SortOrder.LayoutOrder
-Grid.Parent = CommandContainer
+Grid.Parent = CommandsScroll
 
--- Container Destra (Player List)
-local PlayerContainer = Instance.new("ScrollingFrame")
-PlayerContainer.Size = UDim2.new(0.35, 0, 1, -50)
-PlayerContainer.Position = UDim2.new(0.63, 0, 0, 50) -- Allineato a destra
-PlayerContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-PlayerContainer.BorderSizePixel = 0
-PlayerContainer.ScrollBarThickness = 2
-PlayerContainer.Parent = MainFrame
+-- SCROLLING FRAME PLAYERS (Destra)
+local PlayersScroll = Instance.new("ScrollingFrame")
+PlayersScroll.Size = UDim2.new(0.38, 0, 1, -55)
+PlayersScroll.Position = UDim2.new(0.60, 0, 0, 55)
+PlayersScroll.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+PlayersScroll.BorderSizePixel = 0
+PlayersScroll.ScrollBarThickness = 4
+PlayersScroll.Parent = MainFrame
 
-local PlayerListLayout = Instance.new("UIListLayout")
-PlayerListLayout.Padding = UDim.new(0, 5)
-PlayerListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-PlayerListLayout.Parent = PlayerContainer
+local PlayerCorner = Instance.new("UICorner")
+PlayerCorner.CornerRadius = UDim.new(0, 6)
+PlayerCorner.Parent = PlayersScroll
 
--- 2. FUNZIONI UTILI
+local PlayerList = Instance.new("UIListLayout")
+PlayerList.Padding = UDim.new(0, 5)
+PlayerList.SortOrder = Enum.SortOrder.LayoutOrder
+PlayerList.Parent = PlayersScroll
 
--- Funzione per creare bottoni comandi (Stile Foto)
-local function CreateCommandBtn(name, displayNames, icon)
+local PlayerPadding = Instance.new("UIPadding")
+PlayerPadding.PaddingTop = UDim.new(0, 5)
+PlayerPadding.PaddingLeft = UDim.new(0, 5)
+PlayerPadding.PaddingRight = UDim.new(0, 5)
+PlayerPadding.Parent = PlayersScroll
+
+-- 3. SISTEMA COMANDI (LOGICA FUNZIONANTE)
+
+-- Funzione Helper per creare bottoni
+local function CreateCmdButton(name, display, icon, logicFunc)
     local btn = Instance.new("TextButton")
     btn.Name = name
-    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    btn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     btn.BorderSizePixel = 0
     btn.Text = ""
     btn.AutoButtonColor = false
-    btn.Parent = CommandContainer
+    btn.Parent = CommandsScroll
 
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 5)
-    btnCorner.Parent = btn
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 6)
+    c.Parent = btn
     
-    local btnStroke = Instance.new("UIStroke")
-    btnStroke.Color = Color3.fromRGB(60, 60, 60)
-    btnStroke.Thickness = 1
-    btnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    btnStroke.Parent = btn
+    local s = Instance.new("UIStroke")
+    s.Color = Color3.fromRGB(60, 60, 60)
+    s.Thickness = 1
+    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    s.Parent = btn
 
-    -- Icona
-    local ico = Instance.new("TextLabel")
-    ico.Text = icon
-    ico.Size = UDim2.new(0, 30, 1, 0)
-    ico.BackgroundTransparency = 1
-    ico.TextSize = 20
-    ico.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ico.Parent = btn
+    local i = Instance.new("TextLabel")
+    i.Text = icon
+    i.Size = UDim2.new(0, 40, 1, 0)
+    i.BackgroundTransparency = 1
+    i.TextSize = 24
+    i.TextColor3 = Color3.fromRGB(255, 255, 255)
+    i.Parent = btn
 
-    -- Testo (;command)
-    local txt = Instance.new("TextLabel")
-    txt.Text = ";" .. string.lower(displayNames)
-    txt.Size = UDim2.new(1, -35, 1, 0)
-    txt.Position = UDim2.new(0, 35, 0, 0)
-    txt.BackgroundTransparency = 1
-    txt.TextSize = 14
-    txt.TextColor3 = Color3.fromRGB(255, 255, 255)
-    txt.Font = Enum.Font.GothamBold
-    txt.TextXAlignment = Enum.TextXAlignment.Left
-    txt.Parent = btn
+    local t = Instance.new("TextLabel")
+    t.Text = ";" .. string.lower(display)
+    t.Size = UDim2.new(1, -40, 1, 0)
+    t.Position = UDim2.new(0, 40, 0, 0)
+    t.BackgroundTransparency = 1
+    t.TextColor3 = Color3.fromRGB(255, 255, 255)
+    t.TextSize = 14
+    t.Font = Enum.Font.GothamBold
+    t.TextXAlignment = Enum.TextXAlignment.Left
+    t.Parent = btn
 
-    -- Effetto Click
+    -- Quando clicchi il comando
     btn.MouseButton1Click:Connect(function()
-        -- Reset colori
-        for _, c in pairs(CommandContainer:GetChildren()) do
-            if c:IsA("TextButton") then
-                c.UIStroke.Color = Color3.fromRGB(60, 60, 60)
-                c.UIStroke.Thickness = 1
-            end
+        -- Reset colori bordi
+        for _, v in pairs(CommandsScroll:GetChildren()) do
+            if v:IsA("TextButton") then v.UIStroke.Color = Color3.fromRGB(60, 60, 60) end
         end
-        -- Evidenzia questo (Giallo/Oro come foto)
-        btnStroke.Color = Color3.fromRGB(255, 215, 0) 
-        btnStroke.Thickness = 2
+        -- Evidenzia comando selezionato
+        s.Color = Color3.fromRGB(255, 215, 0)
+
+        -- CONTROLLI DI SICUREZZA
+        if not selectedPlayer then 
+            -- Effetto visivo "Seleziona Player"
+            SearchBar.PlaceholderText = "SELECT A PLAYER FIRST!"
+            wait(1)
+            SearchBar.PlaceholderText = "Type Command..."
+            return 
+        end
         
-        -- Esegui comando
-        if _G.ExecuteCommand then
-            _G.ExecuteCommand(name)
+        local char = selectedPlayer.Character
+        if not char then return end
+        local root = char:FindFirstChild("HumanoidRootPart")
+        local hum = char:FindFirstChild("Humanoid")
+        
+        -- ESEGUI LOGICA
+        if root and hum then
+            logicFunc(root, hum, char)
         end
     end)
 end
 
--- Funzione per creare Player nella lista (con Avatar)
-local function CreatePlayerEntry(plr)
-    local entry = Instance.new("TextButton")
-    entry.Name = plr.Name
-    entry.Size = UDim2.new(1, 0, 0, 40)
-    entry.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    entry.BackgroundTransparency = 0.5
-    entry.BorderSizePixel = 0
-    entry.Text = ""
-    entry.Parent = PlayerContainer
+-- DEFINIZIONE COMANDI REALI
 
-    -- Avatar Image
-    local avatar = Instance.new("ImageLabel")
-    avatar.Size = UDim2.new(0, 30, 0, 30)
-    avatar.Position = UDim2.new(0, 5, 0.5, -15)
-    avatar.BackgroundTransparency = 1
-    -- Ottieni immagine testa
-    local content, isReady = Players:GetUserThumbnailAsync(plr.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)
-    avatar.Image = content
-    avatar.Parent = entry
+-- 🚀 ROCKET (Vola ed esplode)
+CreateCmdButton("Rocket", "rocket", "🚀", function(root, hum, char)
+    local rocket = Instance.new("Part")
+    rocket.Size = Vector3.new(1, 4, 1)
+    rocket.CFrame = root.CFrame
+    rocket.BrickColor = BrickColor.new("Bright red")
+    rocket.Material = Enum.Material.Neon
+    rocket.CanCollide = false
+    rocket.Parent = workspace
     
-    local avCorner = Instance.new("UICorner")
-    avCorner.CornerRadius = UDim.new(1, 0) -- Rotondo
-    avCorner.Parent = avatar
+    local weld = Instance.new("WeldConstraint", rocket)
+    weld.Part0 = root
+    weld.Part1 = rocket
+    
+    -- Forza verso l'alto
+    local bv = Instance.new("BodyVelocity", root)
+    bv.Velocity = Vector3.new(0, 100, 0)
+    bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    
+    local fire = Instance.new("Fire", rocket)
+    fire.Size = 5
+    
+    Debris:AddItem(rocket, 4)
+    Debris:AddItem(bv, 4)
+    
+    -- Esplosione dopo 3 secondi
+    delay(3, function()
+        local ex = Instance.new("Explosion")
+        ex.Position = root.Position
+        ex.BlastRadius = 10
+        ex.Parent = workspace
+    end)
+end)
 
-    -- Nome
-    local nameLbl = Instance.new("TextLabel")
-    nameLbl.Text = plr.Name
-    nameLbl.Size = UDim2.new(1, -45, 1, 0)
-    nameLbl.Position = UDim2.new(0, 45, 0, 0)
-    nameLbl.BackgroundTransparency = 1
-    nameLbl.TextColor3 = Color3.fromRGB(200, 200, 200)
-    nameLbl.TextSize = 12
-    nameLbl.Font = Enum.Font.GothamSemibold
-    nameLbl.TextXAlignment = Enum.TextXAlignment.Left
-    nameLbl.Parent = entry
+-- 💥 EXPLODE (Esplosione istantanea)
+CreateCmdButton("Explode", "explode", "💥", function(root, hum, char)
+    local ex = Instance.new("Explosion")
+    ex.Position = root.Position
+    ex.BlastRadius = 15
+    ex.Parent = workspace
+end)
 
-    -- Selezione
-    entry.MouseButton1Click:Connect(function()
+-- 🎈 BALLOON (Palloncino che ti fa volare)
+CreateCmdButton("Balloon", "balloon", "🎈", function(root, hum, char)
+    local balloon = Instance.new("Part")
+    balloon.Shape = Enum.PartType.Ball
+    balloon.Size = Vector3.new(3,3,3)
+    balloon.Position = root.Position + Vector3.new(0, 8, 0)
+    balloon.BrickColor = BrickColor.new("Really red")
+    balloon.Material = Enum.Material.SmoothPlastic
+    balloon.CanCollide = false
+    balloon.Parent = workspace
+    
+    local att0 = Instance.new("Attachment", balloon)
+    local att1 = Instance.new("Attachment", root)
+    
+    local rope = Instance.new("RopeConstraint", balloon)
+    rope.Attachment0 = att0
+    rope.Attachment1 = att1
+    rope.Length = 6
+    rope.Visible = true
+    rope.Color = BrickColor.new("White")
+    
+    local bv = Instance.new("BodyVelocity", balloon)
+    bv.Velocity = Vector3.new(0, 30, 0)
+    bv.MaxForce = Vector3.new(0, 5000, 0)
+    
+    Debris:AddItem(balloon, 10)
+end)
+
+-- 👮 JAIL (Cella visiva)
+CreateCmdButton("Jail", "jail", "👮", function(root, hum, char)
+    local jailModel = Instance.new("Model", workspace)
+    local function makePart(sz, pos)
+        local p = Instance.new("Part", jailModel)
+        p.Size = sz
+        p.Anchored = true
+        p.Transparency = 0.5
+        p.Color = Color3.new(0,0,0)
+        p.Material = Enum.Material.Metal
+        p.Position = root.Position + pos
+    end
+    makePart(Vector3.new(6,0.5,6), Vector3.new(0,-3,0)) -- Floor
+    makePart(Vector3.new(6,0.5,6), Vector3.new(0,3,0)) -- Roof
+    makePart(Vector3.new(0.5,6,6), Vector3.new(3,0,0))
+    makePart(Vector3.new(0.5,6,6), Vector3.new(-3,0,0))
+    makePart(Vector3.new(6,6,0.5), Vector3.new(0,0,3))
+    makePart(Vector3.new(6,6,0.5), Vector3.new(0,0,-3))
+    Debris:AddItem(jailModel, 10)
+end)
+
+-- 🎭 CONTROL (Controlla visuale)
+CreateCmdButton("Control", "control", "🎭", function(root, hum, char)
+    workspace.CurrentCamera.CameraSubject = hum
+end)
+
+-- 🤸 RAGDOLL (Inverte controlli / Trip)
+CreateCmdButton("Ragdoll", "ragdoll", "🤸", function(root, hum, char)
+    if hum then
+        hum.PlatformStand = true
+        wait(3)
+        hum.PlatformStand = false
+    end
+end)
+
+-- 🔃 INVERSE (Fling/Spin)
+CreateCmdButton("Inverse", "inverse", "🔃", function(root, hum, char)
+    local bav = Instance.new("BodyAngularVelocity", root)
+    bav.AngularVelocity = Vector3.new(0, 100, 0)
+    bav.MaxTorque = Vector3.new(0, math.huge, 0)
+    Debris:AddItem(bav, 2)
+end)
+
+-- 👁️ NIGHTVISION
+CreateCmdButton("Nightvision", "nightvision", "👁️", function(root, hum, char)
+    local light = Instance.new("PointLight", root)
+    light.Brightness = 5
+    light.Range = 50
+    Debris:AddItem(light, 60)
+end)
+
+-- 🐜 TINY (Client side size)
+CreateCmdButton("Tiny", "tiny", "🐜", function(root, hum, char)
+   if hum then hum.HipHeight = 1 end
+end)
+
+
+-- 4. SISTEMA LISTA PLAYERS (Con Avatar)
+
+local function CreatePlayerEntry(plr)
+    local btn = Instance.new("TextButton")
+    btn.Name = plr.Name
+    btn.Size = UDim2.new(1, 0, 0, 45)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    btn.BorderSizePixel = 0
+    btn.Text = ""
+    btn.AutoButtonColor = false
+    btn.Parent = PlayersScroll
+
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 4)
+    c.Parent = btn
+
+    -- Immagine Avatar (HeadShot)
+    local avatar = Instance.new("ImageLabel")
+    avatar.Size = UDim2.new(0, 35, 0, 35)
+    avatar.Position = UDim2.new(0, 5, 0.5, -17.5)
+    avatar.BackgroundTransparency = 1
+    -- Caricamento immagine
+    spawn(function()
+        local content = Players:GetUserThumbnailAsync(plr.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)
+        avatar.Image = content
+    end)
+    avatar.Parent = btn
+    
+    local ac = Instance.new("UICorner")
+    ac.CornerRadius = UDim.new(0, 4)
+    ac.Parent = avatar
+
+    -- Nome Player
+    local lbl = Instance.new("TextLabel")
+    lbl.Text = plr.Name
+    lbl.Size = UDim2.new(1, -50, 1, 0)
+    lbl.Position = UDim2.new(0, 50, 0, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+    lbl.TextSize = 13
+    lbl.Font = Enum.Font.GothamSemibold
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = btn
+    
+    -- Decorazione (Barra Status)
+    local status = Instance.new("Frame")
+    status.Size = UDim2.new(0, 60, 0, 8)
+    status.Position = UDim2.new(1, -70, 0.5, -4)
+    status.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    status.BorderSizePixel = 0
+    status.Parent = btn
+    local sc = Instance.new("UICorner")
+    sc.CornerRadius = UDim.new(1, 0)
+    sc.Parent = status
+
+    -- Logica Selezione
+    btn.MouseButton1Click:Connect(function()
         selectedPlayer = plr
-        for _, c in pairs(PlayerContainer:GetChildren()) do
-            if c:IsA("TextButton") then
-                c.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-                c.NameLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+        -- Resetta tutti i colori
+        for _, v in pairs(PlayersScroll:GetChildren()) do
+            if v:IsA("TextButton") then
+                v.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                v.BackgroundTransparency = 0
             end
         end
-        entry.BackgroundColor3 = Color3.fromRGB(0, 150, 80) -- Verde selezione
-        nameLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+        -- Evidenzia questo
+        btn.BackgroundColor3 = Color3.fromRGB(0, 180, 100) -- Verde
     end)
-    
-    entry.NameLabel = nameLbl -- Reference rapida
 end
 
--- Aggiorna Lista Player
-local function RefreshPlayers()
-    for _, c in pairs(PlayerContainer:GetChildren()) do
-        if c:IsA("TextButton") then c:Destroy() end
+-- Aggiorna Lista
+local function RefreshPlayerList()
+    for _, v in pairs(PlayersScroll:GetChildren()) do
+        if v:IsA("TextButton") then v:Destroy() end
     end
     for _, p in pairs(Players:GetPlayers()) do
         CreatePlayerEntry(p)
     end
 end
 
-Players.PlayerAdded:Connect(RefreshPlayers)
-Players.PlayerRemoving:Connect(RefreshPlayers)
-RefreshPlayers()
+Players.PlayerAdded:Connect(RefreshPlayerList)
+Players.PlayerRemoving:Connect(RefreshPlayerList)
+RefreshPlayerList() -- Primo caricamento
 
--- 3. LOGICA COMANDI (Client Side Physics)
+-- 5. LOGICA APRI/CHIUDI (TOGGLE)
 
-_G.ExecuteCommand = function(cmd)
-    if not selectedPlayer then return end
-    local char = selectedPlayer.Character
-    if not char then return end
-    local root = char:FindFirstChild("HumanoidRootPart")
-    local hum = char:FindFirstChild("Humanoid")
-    
-    if not root or not hum then return end
-
-    if cmd == "Rocket" then
-        -- Razzo Visuale + Velocity
-        local rocket = Instance.new("Part")
-        rocket.Size = Vector3.new(1, 4, 1)
-        rocket.Position = root.Position
-        rocket.BrickColor = BrickColor.new("Bright red")
-        rocket.Material = Enum.Material.Neon
-        rocket.CanCollide = false
-        rocket.Parent = workspace
-        
-        local w = Instance.new("WeldConstraint", rocket)
-        w.Part0 = root
-        w.Part1 = rocket
-        
-        local bv = Instance.new("BodyVelocity", root)
-        bv.Velocity = Vector3.new(0, 100, 0)
-        bv.MaxForce = Vector3.new(0, math.huge, 0)
-        
-        game:GetService("Debris"):AddItem(rocket, 3)
-        game:GetService("Debris"):AddItem(bv, 3)
-        
-    elseif cmd == "Ragdoll" then
-        -- "Inverse" controls logic requested
-        if selectedPlayer == player then
-           -- Local inversion logic (only works on self easily)
-           hum.WalkSpeed = -16 
-           wait(10)
-           hum.WalkSpeed = 16
-        end
-        
-    elseif cmd == "Jail" then
-        -- Visual Jail
-        local jailModel = Instance.new("Model", workspace)
-        local function part(pos, sz)
-            local p = Instance.new("Part", jailModel)
-            p.Anchored = true
-            p.Size = sz
-            p.Position = root.Position + pos
-            p.Transparency = 0.5
-            p.Color = Color3.new(0,0,0)
-        end
-        part(Vector3.new(0,0,3), Vector3.new(6,6,0.5))
-        part(Vector3.new(0,0,-3), Vector3.new(6,6,0.5))
-        part(Vector3.new(3,0,0), Vector3.new(0.5,6,6))
-        part(Vector3.new(-3,0,0), Vector3.new(0.5,6,6))
-        game:GetService("Debris"):AddItem(jailModel, 10)
-
-    elseif cmd == "Balloon" then
-        -- Balloon Visual
-        local b = Instance.new("Part", workspace)
-        b.Shape = Enum.PartType.Ball
-        b.Size = Vector3.new(3,3,3)
-        b.Position = root.Position + Vector3.new(0,6,0)
-        b.Color = Color3.fromRGB(255,0,0)
-        b.Anchored = false
-        
-        local att1 = Instance.new("Attachment", b)
-        local att2 = Instance.new("Attachment", root)
-        local rope = Instance.new("RopeConstraint", b)
-        rope.Attachment0 = att1
-        rope.Attachment1 = att2
-        rope.Length = 5
-        rope.Visible = true
-        
-        local bv = Instance.new("BodyVelocity", b)
-        bv.Velocity = Vector3.new(0,20,0)
-        bv.MaxForce = Vector3.new(0,2000,0)
-        game:GetService("Debris"):AddItem(b, 10)
-
-    elseif cmd == "Control" then
-        workspace.CurrentCamera.CameraSubject = hum
-        
-    elseif cmd == "Nightvision" then
-        local light = Instance.new("PointLight", root)
-        light.Range = 60
-        light.Brightness = 2
-        
-    elseif cmd == "Tiny" then
-         -- Client side resizing (only works well if you are server, but tries visual)
-         if hum then
-             hum.HipHeight = 0.5
-         end
-    end
-end
-
--- 4. CREAZIONE BOTTONI (Ordine della foto)
-CreateCommandBtn("Rocket", "Rocket", "🚀")
-CreateCommandBtn("Ragdoll", "Ragdoll", "🤸")
-CreateCommandBtn("Balloon", "Balloon", "🎈")
-CreateCommandBtn("Ragdoll", "Inverse", "🔃") -- Reuse logic
-CreateCommandBtn("Nightvision", "Nightvision", "👁️")
-CreateCommandBtn("Jail", "Jail", "👮")
-CreateCommandBtn("Control", "Control", "🎭")
-CreateCommandBtn("Tiny", "Tiny", "🐜")
-
-
--- 5. APRI/CHIUDI
-local isOpen = false
 ToggleBtn.MouseButton1Click:Connect(function()
-    isOpen = not isOpen
-    MainFrame.Visible = isOpen
+    PanelOpen = not PanelOpen
+    MainFrame.Visible = PanelOpen
 end)
 
 CloseBtn.MouseButton1Click:Connect(function()
-    isOpen = false
+    PanelOpen = false
     MainFrame.Visible = false
 end)
+
+-- Rende il MainFrame Draggable (Movibile) anche se Draggable è deprecato (funziona meglio per exploit)
+local dragging, dragInput, dragStart, startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+MainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+print("✅ Illusion Admin Panel Loaded Successfully!")
